@@ -1,0 +1,220 @@
+/* ─────────────────────────────────────────────
+   style.css  —  Chess Engine (C++ / WASM)
+───────────────────────────────────────────── */
+
+/* ── Reset ──────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Base ────────────────────────────────── */
+body {
+  font-family: sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+}
+
+/* ── Header ──────────────────────────────── */
+header {
+  text-align: center;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 500;
+  color: #fff;
+}
+
+#subtitle {
+  font-size: 12px;
+  color: #7a7aaa;
+  margin-top: 2px;
+}
+
+/* ── Loading overlay ─────────────────────── */
+#loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#loader.hidden {
+  display: none;
+}
+
+#loader-box {
+  text-align: center;
+  color: #ccc;
+  font-size: 14px;
+}
+
+#spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #333;
+  border-top-color: #7a7aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Status bar ──────────────────────────── */
+#status {
+  font-size: 14px;
+  color: #ccc;
+  min-height: 20px;
+  text-align: center;
+}
+
+/* ── Board outer (board + rank labels) ────── */
+#board-outer {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+/* ── Rank labels ─────────────────────────── */
+#ranks {
+  display: flex;
+  flex-direction: column;
+  width: 18px;
+}
+
+#ranks span {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #666;
+}
+
+/* ── The chess board ─────────────────────── */
+#board {
+  display: grid;
+  grid-template-columns: repeat(8, 60px);
+  grid-template-rows: repeat(8, 60px);
+  border: 1px solid #333;
+  user-select: none;
+}
+
+/* ── Individual squares ──────────────────── */
+.sq {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 40px;
+  line-height: 1;
+  transition: filter 0.05s;
+}
+
+.sq:hover {
+  filter: brightness(1.12);
+}
+
+/* ── Move hint overlays ──────────────────── */
+/* Dot on empty reachable square */
+.hint-dot {
+  position: absolute;
+  width: 33%;
+  height: 33%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Ring around a capturable enemy piece */
+.hint-cap {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 5px solid rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+}
+
+/* ── File labels (a–h) ───────────────────── */
+#files {
+  display: flex;
+  padding-left: 22px; /* align under the board */
+}
+
+#files span {
+  width: 60px;
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+}
+
+/* ── Controls ────────────────────────────── */
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.btn {
+  padding: 8px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #2a2a4a;
+  color: #eee;
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: #3a3a6a;
+}
+
+.label {
+  font-size: 13px;
+  color: #999;
+}
+
+select {
+  padding: 7px 10px;
+  font-size: 13px;
+  background: #2a2a4a;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ── Footer info ─────────────────────────── */
+#info {
+  font-size: 12px;
+  color: #555;
+  text-align: center;
+}
