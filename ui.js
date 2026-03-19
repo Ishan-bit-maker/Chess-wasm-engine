@@ -30,13 +30,13 @@
 // ─────────────────────────────────────────────
 const GLYPHS = [
   '',    // 0  empty
-  '♙',  // 1  wP
-  '♘',  // 2  wN
-  '♗',  // 3  wB
-  '♖',  // 4  wR
-  '♕',  // 5  wQ
-  '♔',  // 6  wK
-  '♟',  // 7  bP
+  '♟',  // 1  wP (solid)
+  '♞',  // 2  wN
+  '♝',  // 3  wB
+  '♜',  // 4  wR
+  '♛',  // 5  wQ
+  '♚',  // 6  wK
+  '♟',  // 7  bP (solid)
   '♞',  // 8  bN
   '♝',  // 9  bB
   '♜',  // 10 bR
@@ -134,7 +134,10 @@ function render() {
       const hasPiece = piece !== 0;
 
       squaresHTML += `<div class="sq" style="background:${bg}" data-sq="${i}">`;
-      if (piece)   squaresHTML += `<span>${GLYPHS[piece]}</span>`;
+      if (piece) {
+        const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
+        squaresHTML += `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
+      }
       if (isHint)  squaresHTML += hasPiece
         ? `<div class="hint-cap"></div>`
         : `<div class="hint-dot"></div>`;

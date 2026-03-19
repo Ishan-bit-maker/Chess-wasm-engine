@@ -139,6 +139,15 @@ h1 {
   filter: brightness(1.12);
 }
 
+.white-piece {
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.black-piece {
+  color: #000;
+}
+
 /* ── Move hint overlays ──────────────────── */
 /* Dot on empty reachable square */
 .hint-dot {
