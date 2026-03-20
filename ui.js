@@ -119,21 +119,27 @@ function render() {
       const piece  = board.squares[i];
       const isLight = (r + c) % 2 === 0;
 
-      // Background colour: light/dark + highlights
-      let bg = isLight ? '#f0d9b5' : '#b58863';    // classic wooden board
+      // Base square color from CSS variables
+      const lightColor = getComputedStyle(document.documentElement).getPropertyValue('--board-light').trim() || '#eeeed2';
+      const darkColor  = getComputedStyle(document.documentElement).getPropertyValue('--board-dark').trim()  || '#769656';
+      
+      let bg = isLight ? lightColor : darkColor;
+
+      // Highlight classes
+      let highlightClass = '';
       if (selected === i) {
-        bg = '#6dc16d';                             // selected piece: green
+        highlightClass = 'selected';
       } else if (i === lastFrom || i === lastTo) {
-        bg = isLight ? '#cdd16e' : '#aaa23a';       // last move: yellow
+        highlightClass = 'last-move';
       }
       if (inCheck && piece === kingPiece) {
-        bg = '#e06060';                             // king in check: red
+        bg = '#e06060'; // Keep check highlight as inline for simplicity or move to CSS
       }
 
       const isHint   = hints.includes(i);
       const hasPiece = piece !== 0;
 
-      squaresHTML += `<div class="sq" style="background:${bg}" data-sq="${i}">`;
+      squaresHTML += `<div class="sq ${highlightClass}" style="background:${bg}" data-sq="${i}">`;
       if (piece) {
         const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
         squaresHTML += `<span class="${sideClass}">${GLYPHS[piece]}</span>`;

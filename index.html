@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chess Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -23,45 +26,54 @@
       </div>
     </div>
 
-    <!-- Status bar (whose turn, check, game over) -->
-    <div id="status">Initialising…</div>
-
-    <!-- Captured pieces (Black) -->
-    <div id="captured-black" class="captured-pieces"></div>
-
-    <!-- Board + coordinates wrapper -->
-    <div id="board-outer">
-      <!-- Rank labels (left side) -->
-      <div id="ranks"></div>
-
-      <!-- The board + file labels container -->
-      <div id="board-container">
-        <!-- The actual chess board squares -->
-        <div id="board"></div>
-
-        <!-- File labels (bottom) -->
-        <div id="files"></div>
+    <!-- Main game area — board + sidebar -->
+    <main id="game-container">
+      
+      <!-- Board + coordinates wrapper -->
+      <div id="board-outer">
+        <!-- Rank labels (left side) -->
+        <div id="ranks"></div>
+  
+        <!-- The board + file labels container -->
+        <div id="board-container">
+          <!-- The actual chess board squares -->
+          <div id="board"></div>
+  
+          <!-- File labels (bottom) -->
+          <div id="files"></div>
+        </div>
       </div>
-    </div>
 
-    <!-- Captured pieces (White) -->
-    <div id="captured-white" class="captured-pieces"></div>
+      <!-- Sidebar for status, controls, and info -->
+      <aside id="sidebar">
+        <!-- Status bar (whose turn, check, game over) -->
+        <div id="status-container">
+          <div id="status">Initialising…</div>
+        </div>
 
-    <!-- Control buttons -->
-    <div id="controls">
-      <button class="btn" id="btn-new">New Game</button>
-      <button class="btn" id="btn-flip">Flip Board</button>
+        <div id="controls-card">
+          <div id="controls">
+            <button class="btn btn-primary" id="btn-new">New Game</button>
+            <button class="btn" id="btn-flip">Flip Board</button>
+    
+            <div class="control-group">
+              <label for="depth-select" class="label">Engine Depth</label>
+              <select id="depth-select">
+                <option value="3">3 — fast  (~1200 ELO)</option>
+                <option value="4">4 — medium (~1500 ELO)</option>
+                <option value="5" selected>5 — strong (~1700 ELO)</option>
+                <option value="6">6 — slow  (~1900 ELO)</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-      <label for="depth-select" class="label">Depth</label>
-      <select id="depth-select">
-        <option value="3">3 — fast  (~1200 ELO)</option>
-        <option value="4">4 — medium (~1500 ELO)</option>
-        <option value="5" selected>5 — strong (~1700 ELO)</option>
-        <option value="6">6 — slow  (~1900 ELO)</option>
-      </select>
-    </div>
+        <div id="info-card">
+          <p id="info">You play White · Engine plays Black</p>
+        </div>
+      </aside>
 
-    <p id="info">You play White · Engine plays Black  </p>
+    </main>
 
   </div><!-- /#app -->
 
