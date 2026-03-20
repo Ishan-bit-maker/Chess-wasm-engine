@@ -140,8 +140,14 @@ h1 {
   display: grid;
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
-  border: 1px solid #333;
+  /* border removed as per 'remove board' request for cleaner look */
   user-select: none;
+}
+
+/* Container to keep board and file labels (a-h) together */
+#board-container {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Individual squares ──────────────────── */
@@ -169,6 +175,8 @@ h1 {
 
 .black-piece {
   color: #000;
+  /* Subtle glow to make black pieces visible on dark backgrounds/captured areas */
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 /* ── Move hint overlays ──────────────────── */
@@ -194,7 +202,6 @@ h1 {
 /* ── File labels (a–h) ───────────────────── */
 #files {
   display: flex;
-  padding-left: 22px; /* align under the board */
 }
 
 #files span {
