@@ -161,6 +161,28 @@ function render() {
 
   // ── Status text ─────────────────────────────
   updateStatus(inCheck);
+
+  // ── Captured pieces ─────────────────────────
+  renderCapturedPieces();
+}
+
+function renderCapturedPieces() {
+  const capWhiteEl = document.getElementById('captured-white');
+  const capBlackEl = document.getElementById('captured-black');
+
+  if (!capWhiteEl || !capBlackEl) return;
+
+  // Pieces captured BY White (opponent's pieces)
+  capWhiteEl.innerHTML = (board.capturedWhite || []).map(piece => {
+    const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
+    return `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
+  }).join('');
+
+  // Pieces captured BY Black (player's pieces)
+  capBlackEl.innerHTML = (board.capturedBlack || []).map(piece => {
+    const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
+    return `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
+  }).join('');
 }
 
 function updateStatus(inCheck) {

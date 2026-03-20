@@ -89,6 +89,8 @@ struct Board {
     bool castleBK, castleBQ;  // black castling rights
     int  epSquare;            // en-passant target square, -1 if none
     int  turn;                // 1 = white, -1 = black
+    std::vector<int> capturedWhite; // pieces captured by White
+    std::vector<int> capturedBlack; // pieces captured by Black
 
     Board() { reset(); }
 
@@ -108,6 +110,8 @@ struct Board {
         castleWK = castleWQ = castleBK = castleBQ = true;
         epSquare = -1;
         turn     = 1; // white moves first
+        capturedWhite.clear();
+        capturedBlack.clear();
     }
 
     // Return the square index of the king for `color` (+1 or -1)
@@ -367,7 +371,13 @@ Board applyMove(const Board& b, const Move& mv) {
     // En-passant: remove the captured pawn (it sits beside the landing square)
     if (mv.flag == EP_CAPTURE) {
         int capturedRank = rank(mv.to) + (color == 1 ? 1 : -1);
+        int epCapturedPiece = nb.sq[makeSquare(capturedRank, file(mv.to))];
         nb.sq[makeSquare(capturedRank, file(mv.to))] = EMPTY;
+        if (color == 1) nb.capturedWhite.push_back(epCapturedPiece);
+        else            nb.capturedBlack.push_back(epCapturedPiece);
+    } else if (mv.captured != EMPTY) {
+        if (color == 1) nb.capturedWhite.push_back(mv.captured);
+        else            nb.capturedBlack.push_back(mv.captured);
     }
 
     // Castling: slide the rook to its new square
@@ -651,6 +661,21 @@ std::string getBoardJSON() {
     json += ",\"castleWQ\":" + std::string(gBoard.castleWQ ? "true" : "false");
     json += ",\"castleBK\":" + std::string(gBoard.castleBK ? "true" : "false");
     json += ",\"castleBQ\":" + std::string(gBoard.castleBQ ? "true" : "false");
+
+    json += ",\"capturedWhite\":[";
+    for (size_t i = 0; i < gBoard.capturedWhite.size(); i++) {
+        json += std::to_string(gBoard.capturedWhite[i]);
+        if (i < gBoard.capturedWhite.size() - 1) json += ",";
+    }
+    json += "]";
+
+    json += ",\"capturedBlack\":[";
+    for (size_t i = 0; i < gBoard.capturedBlack.size(); i++) {
+        json += std::to_string(gBoard.capturedBlack[i]);
+        if (i < gBoard.capturedBlack.size() - 1) json += ",";
+    }
+    json += "]";
+
     json += "}";
     return json;
 }
