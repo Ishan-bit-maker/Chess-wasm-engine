@@ -160,12 +160,12 @@ h1 {
 
 .white-piece {
   color: #fff;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 0, 0.8));
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
 }
 
 .black-piece {
   color: #000;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 0, 0.8));
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
 }
 
 /* ── Sidebar ─────────────────────────────── */
