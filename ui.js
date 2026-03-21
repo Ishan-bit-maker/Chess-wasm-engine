@@ -80,7 +80,7 @@ let selected  = null;     // currently selected square index (or null)
 let hints     = [];       // legal destination squares for selected piece
 let lastFrom  = null;     // source square of most recent move (for highlight)
 let lastTo    = null;     // dest  square of most recent move
-let flipped   = false;    // true = view from Black's side
+let flipped   = false;    // true = view from Black's side (Black at bottom)
 let thinking  = false;    // true while C++ engine is computing
 
 // ─────────────────────────────────────────────
@@ -105,7 +105,7 @@ function render() {
   const filesEl = document.getElementById('files');
 
   // Determine square ordering based on board orientation
-  const rows = flipped ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
+  const rows = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   const cols = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
 
   const inCheck  = !thinking && engine && engine.isInCheck();
@@ -153,7 +153,7 @@ function render() {
   boardEl.innerHTML = squaresHTML;
 
   // ── Rank labels ─────────────────────────────
-  ranksEl.innerHTML = rows.map(r => `<span>${r + 1}</span>`).join('');
+  ranksEl.innerHTML = rows.map(r => `<span>${8 - r}</span>`).join('');
 
   // ── File labels ─────────────────────────────
   filesEl.innerHTML = cols.map(c =>
