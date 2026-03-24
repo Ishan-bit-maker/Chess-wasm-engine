@@ -27,6 +27,8 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <random>
+
 
 using namespace emscripten;
 
@@ -711,10 +713,25 @@ bool makePlayerMove(const std::string& uci) {
 }
 
 // Find and play the engine's best move at the given depth.
-// Returns the move as a UCI string (e.g. "d7d5"), or "" if no move exists.
-std::string makeEngineMoveAtDepth(int depth) {
+// If beginner is true, there's a 30% chance of making a random move.
+std::string makeEngineMove(int depth, bool beginner) {
     auto moves = getLegalMoves(gBoard);
     if (moves.empty()) return "";
+
+    static std::mt19937 rng(std::random_device{}());
+
+    if (beginner) {
+        std::uniform_real_distribution<float> dist(0.0, 1.0);
+        if (dist(rng) < 0.3f) {
+            // 30% chance to pick a random move
+            std::uniform_int_distribution<int> moveDist(0, moves.size() - 1);
+            Move randomMove = moves[moveDist(rng)];
+            gBoard = applyMove(gBoard, randomMove);
+            return moveToUCI(randomMove);
+        }
+        // Otherwise use a very shallow search (depth 1)
+        depth = 1;
+    }
 
     orderMoves(moves);
 
@@ -734,6 +751,12 @@ std::string makeEngineMoveAtDepth(int depth) {
     gBoard = applyMove(gBoard, best);
     return moveToUCI(best);
 }
+
+// Deprecated: kept for backward compatibility if needed, but ui.js should use makeEngineMove
+std::string makeEngineMoveAtDepth(int depth) {
+    return makeEngineMove(depth, false);
+}
+
 
 // Game result: "playing" | "checkmate_white_wins" | "checkmate_black_wins" | "stalemate"
 std::string getGameStatus() {
@@ -760,7 +783,9 @@ EMSCRIPTEN_BINDINGS(chess_engine) {
     emscripten::function("getBoardJSON",            &getBoardJSON);
     emscripten::function("getLegalMovesFromSquare", &getLegalMovesFromSquare);
     emscripten::function("makePlayerMove",          &makePlayerMove);
+    emscripten::function("makeEngineMove",          &makeEngineMove);
     emscripten::function("makeEngineMoveAtDepth",   &makeEngineMoveAtDepth);
     emscripten::function("getGameStatus",           &getGameStatus);
+
     emscripten::function("isInCheck",               &isInCheck);
 }
