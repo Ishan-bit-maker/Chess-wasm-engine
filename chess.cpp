@@ -730,13 +730,15 @@ std::string makeEngineMove(int depth, bool beginner) {
     auto moves = getLegalMoves(gBoard);
     if (moves.empty()) return "";
 
-    static std::mt19937 rng(std::random_device{}());
+    static std::mt19937 rng(1337);
+
 
     if (beginner) {
         std::uniform_int_distribution<int> noiseDist(-300, 300);
         bool maximizing = (gBoard.turn == 1);
         Move best = moves[0];
-        int  bestScore = maximizing ? -1000000 : 1000000;
+        long long bestScore = maximizing ? -2000000 : 2000000;
+
 
         for (const Move& mv : moves) {
             Board nb = applyMove(gBoard, mv);
@@ -755,9 +757,10 @@ std::string makeEngineMove(int depth, bool beginner) {
 
     bool maximizing = (gBoard.turn == 1);
     Move best       = moves[0];
-    int  alpha      = -1000000;
-    int  beta       =  1000000;
-    int  bestScore  = maximizing ? -1000000 : 1000000;
+    int  alpha      = INT_MIN;
+    int  beta       = INT_MAX;
+    int  bestScore  = maximizing ? INT_MIN : INT_MAX;
+
 
     for (const Move& mv : moves) {
         Board nb    = applyMove(gBoard, mv);
