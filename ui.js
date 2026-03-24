@@ -264,17 +264,8 @@ function scheduleEngineMove() {
   render(); // show "Engine is thinking…"
 
   setTimeout(() => {
-    const depthVal = parseInt(document.getElementById('depth-select').value, 10);
-    const beginner = (depthVal === 1);
-    const depth    = beginner ? 1 : depthVal;
-    
-    console.log(`Engine starting search (depth: ${depth}, beginner: ${beginner})...`);
-    const startTime = performance.now();
-    
-    const uci = engine.makeEngineMove(depth, beginner);
-    
-    const endTime = performance.now();
-    console.log(`Engine found move: ${uci} in ${((endTime - startTime) / 1000).toFixed(2)}s`);
+    const depth = parseInt(document.getElementById('depth-select').value, 10);
+    const uci   = engine.makeEngineMoveAtDepth(depth);
 
     if (uci) {
       // Parse from/to from the UCI string for highlighting

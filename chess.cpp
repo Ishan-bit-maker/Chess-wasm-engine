@@ -85,16 +85,14 @@ struct Move {
 // ─────────────────────────────────────────────
 // BOARD STATE
 // ─────────────────────────────────────────────
-// Global captured pieces (for UI only, not used in search)
-std::vector<int> gCapturedWhite;
-std::vector<int> gCapturedBlack;
-
 struct Board {
     int  sq[64];              // piece on each square
     bool castleWK, castleWQ;  // white castling rights
     bool castleBK, castleBQ;  // black castling rights
     int  epSquare;            // en-passant target square, -1 if none
     int  turn;                // 1 = white, -1 = black
+    std::vector<int> capturedWhite; // pieces captured by White
+    std::vector<int> capturedBlack; // pieces captured by Black
 
     Board() { reset(); }
 
@@ -114,6 +112,8 @@ struct Board {
         castleWK = castleWQ = castleBK = castleBQ = true;
         epSquare = -1;
         turn     = 1; // white moves first
+        capturedWhite.clear();
+        capturedBlack.clear();
     }
 
     // Return the square index of the king for `color` (+1 or -1)
@@ -373,7 +373,13 @@ Board applyMove(const Board& b, const Move& mv) {
     // En-passant: remove the captured pawn (it sits beside the landing square)
     if (mv.flag == EP_CAPTURE) {
         int capturedRank = rank(mv.to) + (color == 1 ? 1 : -1);
+        int epCapturedPiece = nb.sq[makeSquare(capturedRank, file(mv.to))];
         nb.sq[makeSquare(capturedRank, file(mv.to))] = EMPTY;
+        if (color == 1) nb.capturedWhite.push_back(epCapturedPiece);
+        else            nb.capturedBlack.push_back(epCapturedPiece);
+    } else if (mv.captured != EMPTY) {
+        if (color == 1) nb.capturedWhite.push_back(mv.captured);
+        else            nb.capturedBlack.push_back(mv.captured);
     }
 
     // Castling: slide the rook to its new square
@@ -570,30 +576,28 @@ int minimax(const Board& b, int depth, int alpha, int beta, bool maximizing) {
     if (moves.empty()) {
         int kingPos = b.findKing(b.turn);
         if (kingPos >= 0 && isAttacked(b, kingPos, -b.turn))
-            return maximizing ? (-100000 - depth) : (100000 + depth); 
-        return 0; 
+            return maximizing ? (-100000 - depth) : (100000 + depth); // prefer faster mates
+        return 0; // stalemate
     }
 
     orderMoves(moves);
 
     if (maximizing) {
-        int best = -1000000;
+        int best = INT_MIN;
         for (const Move& mv : moves) {
             Board nb = applyMove(b, mv);
-            int val = minimax(nb, depth - 1, alpha, beta, false);
-            best = std::max(best, val);
+            best  = std::max(best, minimax(nb, depth - 1, alpha, beta, false));
             alpha = std::max(alpha, best);
-            if (beta <= alpha) break; 
+            if (beta <= alpha) break; // beta cut-off
         }
         return best;
     } else {
-        int best = 1000000;
+        int best = INT_MAX;
         for (const Move& mv : moves) {
             Board nb = applyMove(b, mv);
-            int val = minimax(nb, depth - 1, alpha, beta, true);
-            best = std::min(best, val);
+            best = std::min(best, minimax(nb, depth - 1, alpha, beta, true));
             beta = std::min(beta, best);
-            if (beta <= alpha) break; 
+            if (beta <= alpha) break; // alpha cut-off
         }
         return best;
     }
@@ -642,8 +646,6 @@ int algToSq(const std::string& s) {
 // Reset the board to the starting position
 void initGame() {
     gBoard.reset();
-    gCapturedWhite.clear();
-    gCapturedBlack.clear();
 }
 
 // Return the entire board state as a compact JSON string.
@@ -663,16 +665,16 @@ std::string getBoardJSON() {
     json += ",\"castleBQ\":" + std::string(gBoard.castleBQ ? "true" : "false");
 
     json += ",\"capturedWhite\":[";
-    for (size_t i = 0; i < gCapturedWhite.size(); i++) {
-        json += std::to_string(gCapturedWhite[i]);
-        if (i < gCapturedWhite.size() - 1) json += ",";
+    for (size_t i = 0; i < gBoard.capturedWhite.size(); i++) {
+        json += std::to_string(gBoard.capturedWhite[i]);
+        if (i < gBoard.capturedWhite.size() - 1) json += ",";
     }
     json += "]";
 
     json += ",\"capturedBlack\":[";
-    for (size_t i = 0; i < gCapturedBlack.size(); i++) {
-        json += std::to_string(gCapturedBlack[i]);
-        if (i < gCapturedBlack.size() - 1) json += ",";
+    for (size_t i = 0; i < gBoard.capturedBlack.size(); i++) {
+        json += std::to_string(gBoard.capturedBlack[i]);
+        if (i < gBoard.capturedBlack.size() - 1) json += ",";
     }
     json += "]";
 
@@ -697,25 +699,12 @@ std::string getLegalMovesFromSquare(int fromSq) {
     return json;
 }
 
-// Helper to handle captures for the REAL game board
-void handleRealCapture(const Move& mv, int color) {
-    if (mv.flag == EP_CAPTURE) {
-        int enemyPawn = (color == 1) ? bP : wP;
-        if (color == 1) gCapturedWhite.push_back(enemyPawn);
-        else            gCapturedBlack.push_back(enemyPawn);
-    } else if (mv.captured != EMPTY) {
-        if (color == 1) gCapturedWhite.push_back(mv.captured);
-        else            gCapturedBlack.push_back(mv.captured);
-    }
-}
-
 // Apply a player's move (given as a UCI string).
 // Returns true if the move was legal and was applied; false otherwise.
 bool makePlayerMove(const std::string& uci) {
     auto moves = getLegalMoves(gBoard);
     for (const Move& mv : moves) {
         if (moveToUCI(mv) == uci) {
-            handleRealCapture(mv, gBoard.turn);
             gBoard = applyMove(gBoard, mv);
             return true;
         }
@@ -730,25 +719,27 @@ std::string makeEngineMove(int depth, bool beginner) {
     auto moves = getLegalMoves(gBoard);
     if (moves.empty()) return "";
 
-    static std::mt19937 rng(1337);
-
+    static std::mt19937 rng(std::random_device{}());
 
     if (beginner) {
+        // Stochastic evaluation for beginners (~500 Elo)
+        // Instead of picking the best move, we add significant noise to each move's score.
         std::uniform_int_distribution<int> noiseDist(-300, 300);
+        
         bool maximizing = (gBoard.turn == 1);
         Move best = moves[0];
-        long long bestScore = maximizing ? -2000000 : 2000000;
-
+        int  bestScore = maximizing ? INT_MIN : INT_MAX;
 
         for (const Move& mv : moves) {
             Board nb = applyMove(gBoard, mv);
+            // Evaluate at depth 0 (static eval after move) + noise
             int score = evaluate(nb) + noiseDist(rng);
+            
             if (maximizing ? (score > bestScore) : (score < bestScore)) {
                 bestScore = score;
                 best      = mv;
             }
         }
-        handleRealCapture(best, gBoard.turn);
         gBoard = applyMove(gBoard, best);
         return moveToUCI(best);
     }
@@ -756,32 +747,18 @@ std::string makeEngineMove(int depth, bool beginner) {
     orderMoves(moves);
 
     bool maximizing = (gBoard.turn == 1);
-    Move best       = moves[0];
-    int  alpha      = INT_MIN;
-    int  beta       = INT_MAX;
-    int  bestScore  = maximizing ? INT_MIN : INT_MAX;
-
+    Move best = moves[0];
+    int  bestScore = maximizing ? INT_MIN : INT_MAX;
 
     for (const Move& mv : moves) {
         Board nb    = applyMove(gBoard, mv);
-        int   score = minimax(nb, depth - 1, alpha, beta, !maximizing);
-        
-        if (maximizing) {
-            if (score > bestScore) {
-                bestScore = score;
-                best      = mv;
-            }
-            alpha = std::max(alpha, bestScore);
-        } else {
-            if (score < bestScore) {
-                bestScore = score;
-                best      = mv;
-            }
-            beta = std::min(beta, bestScore);
+        int   score = minimax(nb, depth - 1, INT_MIN, INT_MAX, !maximizing);
+        if (maximizing ? (score > bestScore) : (score < bestScore)) {
+            bestScore = score;
+            best      = mv;
         }
     }
 
-    handleRealCapture(best, gBoard.turn);
     gBoard = applyMove(gBoard, best);
     return moveToUCI(best);
 }
