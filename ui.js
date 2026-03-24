@@ -264,8 +264,11 @@ function scheduleEngineMove() {
   render(); // show "Engine is thinking…"
 
   setTimeout(() => {
-    const depth = parseInt(document.getElementById('depth-select').value, 10);
-    const uci   = engine.makeEngineMoveAtDepth(depth);
+    const depthVal = parseInt(document.getElementById('depth-select').value, 10);
+    const beginner = (depthVal === 1);
+    const depth    = beginner ? 1 : depthVal;
+    
+    const uci      = engine.makeEngineMove(depth, beginner);
 
     if (uci) {
       // Parse from/to from the UCI string for highlighting
