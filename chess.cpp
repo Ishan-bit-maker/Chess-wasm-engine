@@ -713,7 +713,8 @@ bool makePlayerMove(const std::string& uci) {
 }
 
 // Find and play the engine's best move at the given depth.
-// If beginner is true, there's a 30% chance of making a random move.
+// If beginner is true, it performs a depth 1 search with added random noise
+// to each move's evaluation to simulate human-like blunders and miscalculations.
 std::string makeEngineMove(int depth, bool beginner) {
     auto moves = getLegalMoves(gBoard);
     if (moves.empty()) return "";
@@ -721,16 +722,26 @@ std::string makeEngineMove(int depth, bool beginner) {
     static std::mt19937 rng(std::random_device{}());
 
     if (beginner) {
-        std::uniform_real_distribution<float> dist(0.0, 1.0);
-        if (dist(rng) < 0.3f) {
-            // 30% chance to pick a random move
-            std::uniform_int_distribution<int> moveDist(0, moves.size() - 1);
-            Move randomMove = moves[moveDist(rng)];
-            gBoard = applyMove(gBoard, randomMove);
-            return moveToUCI(randomMove);
+        // Stochastic evaluation for beginners (~500 Elo)
+        // Instead of picking the best move, we add significant noise to each move's score.
+        std::uniform_int_distribution<int> noiseDist(-300, 300);
+        
+        bool maximizing = (gBoard.turn == 1);
+        Move best = moves[0];
+        int  bestScore = maximizing ? INT_MIN : INT_MAX;
+
+        for (const Move& mv : moves) {
+            Board nb = applyMove(gBoard, mv);
+            // Evaluate at depth 0 (static eval after move) + noise
+            int score = evaluate(nb) + noiseDist(rng);
+            
+            if (maximizing ? (score > bestScore) : (score < bestScore)) {
+                bestScore = score;
+                best      = mv;
+            }
         }
-        // Otherwise use a very shallow search (depth 1)
-        depth = 1;
+        gBoard = applyMove(gBoard, best);
+        return moveToUCI(best);
     }
 
     orderMoves(moves);
