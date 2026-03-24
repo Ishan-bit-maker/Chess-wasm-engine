@@ -570,28 +570,30 @@ int minimax(const Board& b, int depth, int alpha, int beta, bool maximizing) {
     if (moves.empty()) {
         int kingPos = b.findKing(b.turn);
         if (kingPos >= 0 && isAttacked(b, kingPos, -b.turn))
-            return maximizing ? (-100000 - depth) : (100000 + depth); // prefer faster mates
-        return 0; // stalemate
+            return maximizing ? (-100000 - depth) : (100000 + depth); 
+        return 0; 
     }
 
     orderMoves(moves);
 
     if (maximizing) {
-        int best = INT_MIN;
+        int best = -1000000;
         for (const Move& mv : moves) {
             Board nb = applyMove(b, mv);
-            best  = std::max(best, minimax(nb, depth - 1, alpha, beta, false));
+            int val = minimax(nb, depth - 1, alpha, beta, false);
+            best = std::max(best, val);
             alpha = std::max(alpha, best);
-            if (beta <= alpha) break; // beta cut-off
+            if (beta <= alpha) break; 
         }
         return best;
     } else {
-        int best = INT_MAX;
+        int best = 1000000;
         for (const Move& mv : moves) {
             Board nb = applyMove(b, mv);
-            best = std::min(best, minimax(nb, depth - 1, alpha, beta, true));
+            int val = minimax(nb, depth - 1, alpha, beta, true);
+            best = std::min(best, val);
             beta = std::min(beta, best);
-            if (beta <= alpha) break; // alpha cut-off
+            if (beta <= alpha) break; 
         }
         return best;
     }
@@ -731,19 +733,14 @@ std::string makeEngineMove(int depth, bool beginner) {
     static std::mt19937 rng(std::random_device{}());
 
     if (beginner) {
-        // Stochastic evaluation for beginners (~500 Elo)
-        // Instead of picking the best move, we add significant noise to each move's score.
         std::uniform_int_distribution<int> noiseDist(-300, 300);
-        
         bool maximizing = (gBoard.turn == 1);
         Move best = moves[0];
-        int  bestScore = maximizing ? INT_MIN : INT_MAX;
+        int  bestScore = maximizing ? -1000000 : 1000000;
 
         for (const Move& mv : moves) {
             Board nb = applyMove(gBoard, mv);
-            // Evaluate at depth 0 (static eval after move) + noise
             int score = evaluate(nb) + noiseDist(rng);
-            
             if (maximizing ? (score > bestScore) : (score < bestScore)) {
                 bestScore = score;
                 best      = mv;
@@ -757,15 +754,27 @@ std::string makeEngineMove(int depth, bool beginner) {
     orderMoves(moves);
 
     bool maximizing = (gBoard.turn == 1);
-    Move best = moves[0];
-    int  bestScore = maximizing ? INT_MIN : INT_MAX;
+    Move best       = moves[0];
+    int  alpha      = -1000000;
+    int  beta       =  1000000;
+    int  bestScore  = maximizing ? -1000000 : 1000000;
 
     for (const Move& mv : moves) {
         Board nb    = applyMove(gBoard, mv);
-        int   score = minimax(nb, depth - 1, INT_MIN, INT_MAX, !maximizing);
-        if (maximizing ? (score > bestScore) : (score < bestScore)) {
-            bestScore = score;
-            best      = mv;
+        int   score = minimax(nb, depth - 1, alpha, beta, !maximizing);
+        
+        if (maximizing) {
+            if (score > bestScore) {
+                bestScore = score;
+                best      = mv;
+            }
+            alpha = std::max(alpha, bestScore);
+        } else {
+            if (score < bestScore) {
+                bestScore = score;
+                best      = mv;
+            }
+            beta = std::min(beta, bestScore);
         }
     }
 

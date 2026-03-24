@@ -268,7 +268,13 @@ function scheduleEngineMove() {
     const beginner = (depthVal === 1);
     const depth    = beginner ? 1 : depthVal;
     
-    const uci      = engine.makeEngineMove(depth, beginner);
+    console.log(`Engine starting search (depth: ${depth}, beginner: ${beginner})...`);
+    const startTime = performance.now();
+    
+    const uci = engine.makeEngineMove(depth, beginner);
+    
+    const endTime = performance.now();
+    console.log(`Engine found move: ${uci} in ${((endTime - startTime) / 1000).toFixed(2)}s`);
 
     if (uci) {
       // Parse from/to from the UCI string for highlighting
