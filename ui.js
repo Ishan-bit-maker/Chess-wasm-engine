@@ -80,7 +80,7 @@ let selected  = null;     // currently selected square index (or null)
 let hints     = [];       // legal destination squares for selected piece
 let lastFrom  = null;     // source square of most recent move (for highlight)
 let lastTo    = null;     // dest  square of most recent move
-let flipped   = false;    // true = view from Black's side (Black at bottom)
+let flipped   = false;    // true = view from Black's side
 let thinking  = false;    // true while C++ engine is computing
 
 // ─────────────────────────────────────────────
@@ -105,7 +105,7 @@ function render() {
   const filesEl = document.getElementById('files');
 
   // Determine square ordering based on board orientation
-  const rows = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+  const rows = flipped ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
   const cols = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
 
   const inCheck  = !thinking && engine && engine.isInCheck();
@@ -119,27 +119,21 @@ function render() {
       const piece  = board.squares[i];
       const isLight = (r + c) % 2 === 0;
 
-      // Base square color from CSS variables
-      const lightColor = getComputedStyle(document.documentElement).getPropertyValue('--board-light').trim() || '#eeeed2';
-      const darkColor  = getComputedStyle(document.documentElement).getPropertyValue('--board-dark').trim()  || '#769656';
-      
-      let bg = isLight ? lightColor : darkColor;
-
-      // Highlight classes
-      let highlightClass = '';
+      // Background colour: light/dark + highlights
+      let bg = isLight ? '#f0d9b5' : '#b58863';    // classic wooden board
       if (selected === i) {
-        highlightClass = 'selected';
+        bg = '#6dc16d';                             // selected piece: green
       } else if (i === lastFrom || i === lastTo) {
-        highlightClass = 'last-move';
+        bg = isLight ? '#cdd16e' : '#aaa23a';       // last move: yellow
       }
       if (inCheck && piece === kingPiece) {
-        bg = '#e06060'; // Keep check highlight as inline for simplicity or move to CSS
+        bg = '#e06060';                             // king in check: red
       }
 
       const isHint   = hints.includes(i);
       const hasPiece = piece !== 0;
 
-      squaresHTML += `<div class="sq ${highlightClass}" style="background:${bg}" data-sq="${i}">`;
+      squaresHTML += `<div class="sq" style="background:${bg}" data-sq="${i}">`;
       if (piece) {
         const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
         squaresHTML += `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
@@ -153,7 +147,7 @@ function render() {
   boardEl.innerHTML = squaresHTML;
 
   // ── Rank labels ─────────────────────────────
-  ranksEl.innerHTML = rows.map(r => `<span>${8 - r}</span>`).join('');
+  ranksEl.innerHTML = rows.map(r => `<span>${r + 1}</span>`).join('');
 
   // ── File labels ─────────────────────────────
   filesEl.innerHTML = cols.map(c =>
@@ -167,28 +161,6 @@ function render() {
 
   // ── Status text ─────────────────────────────
   updateStatus(inCheck);
-
-  // ── Captured pieces ─────────────────────────
-  renderCapturedPieces();
-}
-
-function renderCapturedPieces() {
-  const capWhiteEl = document.getElementById('captured-white');
-  const capBlackEl = document.getElementById('captured-black');
-
-  if (!capWhiteEl || !capBlackEl) return;
-
-  // Pieces captured BY White (opponent's pieces)
-  capWhiteEl.innerHTML = (board.capturedWhite || []).map(piece => {
-    const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
-    return `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
-  }).join('');
-
-  // Pieces captured BY Black (player's pieces)
-  capBlackEl.innerHTML = (board.capturedBlack || []).map(piece => {
-    const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
-    return `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
-  }).join('');
 }
 
 function updateStatus(inCheck) {
@@ -264,11 +236,8 @@ function scheduleEngineMove() {
   render(); // show "Engine is thinking…"
 
   setTimeout(() => {
-    const depthVal = parseInt(document.getElementById('depth-select').value, 10);
-    const beginner = (depthVal === 1);
-    const depth    = beginner ? 1 : depthVal;
-    
-    const uci      = engine.makeEngineMove(depth, beginner);
+    const depth = parseInt(document.getElementById('depth-select').value, 10);
+    const uci   = engine.makeEngineMoveAtDepth(depth);
 
     if (uci) {
       // Parse from/to from the UCI string for highlighting

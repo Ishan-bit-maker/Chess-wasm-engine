@@ -1,20 +1,6 @@
 /* ─────────────────────────────────────────────
-   style.css  —  Chess Engine (Chess.com Style)
+   style.css  —  Chess Engine (C++ / WASM)
 ───────────────────────────────────────────── */
-
-:root {
-  --bg-dark: #262421;
-  --bg-sidebar: #2d2b29;
-  --text-main: #bababa;
-  --text-bright: #ffffff;
-  --board-light: #eeeed2;
-  --board-dark: #769656;
-  --accent: #81b64c;
-  --accent-hover: #a3d16a;
-  --border-color: #403d39;
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 8px rgba(0,0,0,0.3);
-}
 
 /* ── Reset ──────────────────────────────── */
 *, *::before, *::after {
@@ -25,39 +11,46 @@
 
 /* ── Base ────────────────────────────────── */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg-dark);
-  color: var(--text-main);
+  font-family: sans-serif;
+  background: #1a1a2e;
+  color: #eee;
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 24px;
+  padding: 24px 16px;
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  gap: 10px;
   width: 100%;
-  max-width: 900px;
+  max-width: 520px;
 }
 
+/* ── Header ──────────────────────────────── */
 header {
-  text-align: left;
+  text-align: center;
 }
 
 h1 {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-bright);
+  font-size: 22px;
+  font-weight: 500;
+  color: #fff;
+}
+
+#subtitle {
+  font-size: 12px;
+  color: #7a7aaa;
+  margin-top: 2px;
 }
 
 /* ── Loading overlay ─────────────────────── */
 #loader {
   position: fixed;
   inset: 0;
-  background: var(--bg-dark);
+  background: rgba(10, 10, 20, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,40 +63,44 @@ h1 {
 
 #loader-box {
   text-align: center;
+  color: #ccc;
+  font-size: 14px;
 }
 
 #spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #333;
-  border-top-color: var(--accent);
+  width: 36px;
+  height: 36px;
+  border: 3px solid #333;
+  border-top-color: #7a7aff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin: 0 auto 16px;
+  margin: 0 auto 12px;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* ── Main Layout ─────────────────────────── */
-#game-container {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  justify-content: center;
-  flex-wrap: wrap; /* responsive */
+/* ── Status bar ──────────────────────────── */
+#status {
+  font-size: 14px;
+  color: #ccc;
+  min-height: 20px;
+  text-align: center;
 }
 
-/* ── Board Outer ─────────────────────────── */
+/* ── Board outer (board + rank labels) ────── */
 #board-outer {
   display: flex;
   gap: 4px;
+  align-items: flex-start;
 }
 
+/* ── Rank labels ─────────────────────────── */
 #ranks {
   display: flex;
   flex-direction: column;
+  width: 18px;
 }
 
 #ranks span {
@@ -111,41 +108,20 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
   color: #666;
-  width: 20px;
 }
 
-#board-container {
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-md);
-}
-
+/* ── The chess board ─────────────────────── */
 #board {
   display: grid;
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
+  border: 1px solid #333;
   user-select: none;
-  background: #000;
 }
 
-#files {
-  display: flex;
-  padding-left: 0;
-}
-
-#files span {
-  width: 60px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 500;
-  color: #666;
-  margin-top: 4px;
-}
-
-/* ── Squares & Pieces ────────────────────── */
+/* ── Individual squares ──────────────────── */
 .sq {
   width: 60px;
   height: 60px;
@@ -154,153 +130,100 @@ h1 {
   justify-content: center;
   cursor: pointer;
   position: relative;
-  font-size: 44px;
-  transition: background 0.1s;
+  font-size: 40px;
+  line-height: 1;
+  transition: filter 0.05s;
+}
+
+.sq:hover {
+  filter: brightness(1.12);
 }
 
 .white-piece {
   color: #fff;
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
 }
 
 .black-piece {
   color: #000;
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
 }
 
-/* ── Sidebar ─────────────────────────────── */
-#sidebar {
-  flex: 1;
-  min-width: 300px;
-  max-width: 350px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-#status-container {
-  background: var(--bg-sidebar);
-  padding: 16px;
-  border-radius: 8px;
-  border-bottom: 3px solid #1a1a1a;
-  box-shadow: var(--shadow-sm);
-}
-
-#status {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-bright);
-}
-
-#controls-card, #info-card {
-  background: var(--bg-sidebar);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-}
-
-#controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #888;
-}
-
-/* ── Buttons & Selects ───────────────────── */
-.btn {
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  border-radius: 6px;
-  background: #45423e;
-  color: #fff;
-  transition: all 0.2s;
-  box-shadow: 0 4px 0 #1a1a1a;
-}
-
-.btn:hover {
-  background: #504d48;
-}
-
-.btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #1a1a1a;
-}
-
-.btn-primary {
-  background: var(--accent);
-  box-shadow: 0 4px 0 #457531;
-}
-
-.btn-primary:hover {
-  background: var(--accent-hover);
-}
-
-.btn-primary:active {
-  box-shadow: 0 2px 0 #457531;
-}
-
-select {
-  padding: 10px;
-  font-size: 14px;
-  background: #45423e;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 6px;
-  cursor: pointer;
-  outline: none;
-}
-
-select:focus {
-  border-color: var(--accent);
-}
-
-#info {
-  font-size: 13px;
-  color: #888;
-  line-height: 1.5;
-}
-
-/* ── Highlights ──────────────────────────── */
-/* Use Chess.com colors for highlights */
-.sq.selected {
-  background-color: #f7f769d4 !important; /* Brighter, more opaque yellow */
-}
-
-.sq.last-move {
-  background-color: #f7f7698c !important; /* Brighter, more opaque yellow */
-}
-
-/* Move hints */
+/* ── Move hint overlays ──────────────────── */
+/* Dot on empty reachable square */
 .hint-dot {
   position: absolute;
-  width: 25%;
-  height: 25%;
+  width: 33%;
+  height: 33%;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.25);
   pointer-events: none;
-  z-index: 1;
 }
 
+/* Ring around a capturable enemy piece */
 .hint-cap {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 6px solid rgba(0, 0, 0, 0.12);
+  border: 5px solid rgba(0, 0, 0, 0.28);
   pointer-events: none;
-  z-index: 1;
+}
+
+/* ── File labels (a–h) ───────────────────── */
+#files {
+  display: flex;
+  padding-left: 22px; /* align under the board */
+}
+
+#files span {
+  width: 60px;
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+}
+
+/* ── Controls ────────────────────────────── */
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.btn {
+  padding: 8px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #2a2a4a;
+  color: #eee;
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: #3a3a6a;
+}
+
+.label {
+  font-size: 13px;
+  color: #999;
+}
+
+select {
+  padding: 7px 10px;
+  font-size: 13px;
+  background: #2a2a4a;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ── Footer info ─────────────────────────── */
+#info {
+  font-size: 12px;
+  color: #555;
+  text-align: center;
 }

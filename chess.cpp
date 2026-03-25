@@ -27,8 +27,6 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
-#include <random>
-
 
 using namespace emscripten;
 
@@ -85,10 +83,6 @@ struct Move {
 // ─────────────────────────────────────────────
 // BOARD STATE
 // ─────────────────────────────────────────────
-// Global captured pieces (for UI only, not used in search)
-std::vector<int> gCapturedWhite;
-std::vector<int> gCapturedBlack;
-
 struct Board {
     int  sq[64];              // piece on each square
     bool castleWK, castleWQ;  // white castling rights
@@ -640,8 +634,6 @@ int algToSq(const std::string& s) {
 // Reset the board to the starting position
 void initGame() {
     gBoard.reset();
-    gCapturedWhite.clear();
-    gCapturedBlack.clear();
 }
 
 // Return the entire board state as a compact JSON string.
@@ -659,21 +651,6 @@ std::string getBoardJSON() {
     json += ",\"castleWQ\":" + std::string(gBoard.castleWQ ? "true" : "false");
     json += ",\"castleBK\":" + std::string(gBoard.castleBK ? "true" : "false");
     json += ",\"castleBQ\":" + std::string(gBoard.castleBQ ? "true" : "false");
-
-    json += ",\"capturedWhite\":[";
-    for (size_t i = 0; i < gCapturedWhite.size(); i++) {
-        json += std::to_string(gCapturedWhite[i]);
-        if (i < gCapturedWhite.size() - 1) json += ",";
-    }
-    json += "]";
-
-    json += ",\"capturedBlack\":[";
-    for (size_t i = 0; i < gCapturedBlack.size(); i++) {
-        json += std::to_string(gCapturedBlack[i]);
-        if (i < gCapturedBlack.size() - 1) json += ",";
-    }
-    json += "]";
-
     json += "}";
     return json;
 }
@@ -695,25 +672,12 @@ std::string getLegalMovesFromSquare(int fromSq) {
     return json;
 }
 
-// Helper to handle captures for the REAL game board
-void handleRealCapture(const Move& mv, int color) {
-    if (mv.flag == EP_CAPTURE) {
-        int enemyPawn = (color == 1) ? bP : wP;
-        if (color == 1) gCapturedWhite.push_back(enemyPawn);
-        else            gCapturedBlack.push_back(enemyPawn);
-    } else if (mv.captured != EMPTY) {
-        if (color == 1) gCapturedWhite.push_back(mv.captured);
-        else            gCapturedBlack.push_back(mv.captured);
-    }
-}
-
 // Apply a player's move (given as a UCI string).
 // Returns true if the move was legal and was applied; false otherwise.
 bool makePlayerMove(const std::string& uci) {
     auto moves = getLegalMoves(gBoard);
     for (const Move& mv : moves) {
         if (moveToUCI(mv) == uci) {
-            handleRealCapture(mv, gBoard.turn);
             gBoard = applyMove(gBoard, mv);
             return true;
         }
@@ -722,37 +686,10 @@ bool makePlayerMove(const std::string& uci) {
 }
 
 // Find and play the engine's best move at the given depth.
-// If beginner is true, it performs a depth 1 search with added random noise
-// to each move's evaluation to simulate human-like blunders and miscalculations.
-std::string makeEngineMove(int depth, bool beginner) {
+// Returns the move as a UCI string (e.g. "d7d5"), or "" if no move exists.
+std::string makeEngineMoveAtDepth(int depth) {
     auto moves = getLegalMoves(gBoard);
     if (moves.empty()) return "";
-
-    static std::mt19937 rng(std::random_device{}());
-
-    if (beginner) {
-        // Stochastic evaluation for beginners (~500 Elo)
-        // Instead of picking the best move, we add significant noise to each move's score.
-        std::uniform_int_distribution<int> noiseDist(-300, 300);
-        
-        bool maximizing = (gBoard.turn == 1);
-        Move best = moves[0];
-        int  bestScore = maximizing ? INT_MIN : INT_MAX;
-
-        for (const Move& mv : moves) {
-            Board nb = applyMove(gBoard, mv);
-            // Evaluate at depth 0 (static eval after move) + noise
-            int score = evaluate(nb) + noiseDist(rng);
-            
-            if (maximizing ? (score > bestScore) : (score < bestScore)) {
-                bestScore = score;
-                best      = mv;
-            }
-        }
-        handleRealCapture(best, gBoard.turn);
-        gBoard = applyMove(gBoard, best);
-        return moveToUCI(best);
-    }
 
     orderMoves(moves);
 
@@ -769,16 +706,9 @@ std::string makeEngineMove(int depth, bool beginner) {
         }
     }
 
-    handleRealCapture(best, gBoard.turn);
     gBoard = applyMove(gBoard, best);
     return moveToUCI(best);
 }
-
-// Deprecated: kept for backward compatibility if needed, but ui.js should use makeEngineMove
-std::string makeEngineMoveAtDepth(int depth) {
-    return makeEngineMove(depth, false);
-}
-
 
 // Game result: "playing" | "checkmate_white_wins" | "checkmate_black_wins" | "stalemate"
 std::string getGameStatus() {
@@ -805,9 +735,7 @@ EMSCRIPTEN_BINDINGS(chess_engine) {
     emscripten::function("getBoardJSON",            &getBoardJSON);
     emscripten::function("getLegalMovesFromSquare", &getLegalMovesFromSquare);
     emscripten::function("makePlayerMove",          &makePlayerMove);
-    emscripten::function("makeEngineMove",          &makeEngineMove);
     emscripten::function("makeEngineMoveAtDepth",   &makeEngineMoveAtDepth);
     emscripten::function("getGameStatus",           &getGameStatus);
-
     emscripten::function("isInCheck",               &isInCheck);
 }
