@@ -161,6 +161,15 @@ function render() {
 
   // ── Status text ─────────────────────────────
   updateStatus(inCheck);
+
+  // ── Claim Draw Button ───────────────────────
+  const claimBtn = document.getElementById('btn-claim');
+  const status   = engine ? engine.getGameStatus() : 'loading';
+  if (engine && status === 'playing' && engine.canClaimDraw()) {
+    claimBtn.style.display = 'inline-block';
+  } else {
+    claimBtn.style.display = 'none';
+  }
 }
 
 function updateStatus(inCheck) {
@@ -170,6 +179,8 @@ function updateStatus(inCheck) {
   if (status === 'checkmate_black_wins') { el.textContent = 'Checkmate — Engine wins!'; return; }
   if (status === 'checkmate_white_wins') { el.textContent = 'Checkmate — You win!';     return; }
   if (status === 'stalemate')            { el.textContent = 'Stalemate — Draw!';         return; }
+  if (status === 'draw_fivefold')        { el.textContent = 'Fivefold Repetition — Draw!'; return; }
+  if (status === 'draw_claimed')         { el.textContent = 'Threefold Repetition — Draw!'; return; }
   if (thinking)  { el.textContent = 'Engine is thinking…';               return; }
   if (inCheck)   { el.textContent = 'Check! Your turn.';                 return; }
 
@@ -273,8 +284,16 @@ function flipBoard() {
   render();
 }
 
+function claimDraw() {
+  if (engine && engine.canClaimDraw()) {
+    engine.claimDraw();
+    render();
+  }
+}
+
 document.getElementById('btn-new').addEventListener('click',  newGame);
 document.getElementById('btn-flip').addEventListener('click', flipBoard);
+document.getElementById('btn-claim').addEventListener('click', claimDraw);
 
 // ─────────────────────────────────────────────
 // WASM MODULE BOOTSTRAP

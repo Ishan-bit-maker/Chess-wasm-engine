@@ -81,6 +81,44 @@ struct Move {
 };
 
 // ─────────────────────────────────────────────
+// ZOBRIST HASHING
+// ─────────────────────────────────────────────
+uint64_t zPieceSquare[13][64];
+uint64_t zSideToMove;
+uint64_t zCastling[16]; // 4 separate rights -> 16 states
+uint64_t zEnPassant[8]; // file index 0..7
+
+class PRNG {
+    uint64_t s;
+public:
+    PRNG(uint64_t seed = 0x1234567890ABCDEFULL) : s(seed) {}
+    uint64_t next() {
+        s ^= s >> 12;
+        s ^= s << 25;
+        s ^= s >> 27;
+        return s * 0x2545F4914F6CDD1DULL;
+    }
+};
+
+void initZobrist() {
+    PRNG rng(1070372); // arbitrary seed
+    for (int p = 0; p < 13; p++)
+        for (int sq = 0; sq < 64; sq++)
+            zPieceSquare[p][sq] = rng.next();
+            
+    zSideToMove = rng.next();
+    
+    for (int i = 0; i < 16; i++)
+        zCastling[i] = rng.next();
+        
+    for (int i = 0; i < 8; i++)
+        zEnPassant[i] = rng.next();
+}
+
+// Forward declare struct Board for computeHash
+struct Board;
+
+// ─────────────────────────────────────────────
 // BOARD STATE
 // ─────────────────────────────────────────────
 struct Board {
@@ -118,6 +156,32 @@ struct Board {
         return -1; // should never happen in a valid position
     }
 };
+
+uint64_t computeHash(const Board& b) {
+    uint64_t h = 0;
+    // Pieces
+    for (int i = 0; i < 64; i++) {
+        int p = b.sq[i];
+        if (p != EMPTY) h ^= zPieceSquare[p][i];
+    }
+    // Turn
+    if (b.turn == -1) h ^= zSideToMove;
+    
+    // Castling rights (4 bits -> 0 to 15)
+    int castlingIndex = 0;
+    if (b.castleWK) castlingIndex |= 1;
+    if (b.castleWQ) castlingIndex |= 2;
+    if (b.castleBK) castlingIndex |= 4;
+    if (b.castleBQ) castlingIndex |= 8;
+    h ^= zCastling[castlingIndex];
+    
+    // En Passant
+    if (b.epSquare != -1) {
+        h ^= zEnPassant[file(b.epSquare)];
+    }
+    
+    return h;
+}
 
 // ─────────────────────────────────────────────
 // ATTACK DETECTION
@@ -595,6 +659,9 @@ int minimax(const Board& b, int depth, int alpha, int beta, bool maximizing) {
 // GLOBAL GAME STATE
 // ─────────────────────────────────────────────
 Board gBoard;
+std::vector<uint64_t> gameHistory;
+bool drawClaimed = false;
+static bool zobristInitialized = false;
 
 // ─────────────────────────────────────────────
 // COORDINATE UTILITIES
@@ -633,7 +700,14 @@ int algToSq(const std::string& s) {
 
 // Reset the board to the starting position
 void initGame() {
+    if (!zobristInitialized) {
+        initZobrist();
+        zobristInitialized = true;
+    }
     gBoard.reset();
+    gameHistory.clear();
+    gameHistory.push_back(computeHash(gBoard));
+    drawClaimed = false;
 }
 
 // Return the entire board state as a compact JSON string.
@@ -679,6 +753,7 @@ bool makePlayerMove(const std::string& uci) {
     for (const Move& mv : moves) {
         if (moveToUCI(mv) == uci) {
             gBoard = applyMove(gBoard, mv);
+            gameHistory.push_back(computeHash(gBoard));
             return true;
         }
     }
@@ -707,13 +782,28 @@ std::string makeEngineMoveAtDepth(int depth) {
     }
 
     gBoard = applyMove(gBoard, best);
+    gameHistory.push_back(computeHash(gBoard));
     return moveToUCI(best);
 }
 
-// Game result: "playing" | "checkmate_white_wins" | "checkmate_black_wins" | "stalemate"
+// Game result: "playing" | "checkmate_white_wins" | "checkmate_black_wins" | "stalemate" | "draw_fivefold" | "draw_claimed"
 std::string getGameStatus() {
+    if (drawClaimed) return "draw_claimed";
+
     auto moves = getLegalMoves(gBoard);
-    if (!moves.empty()) return "playing";
+    
+    if (!moves.empty()) {
+        if (!gameHistory.empty()) {
+            uint64_t currentHash = gameHistory.back();
+            int count = 0;
+            for (uint64_t h : gameHistory) {
+                if (h == currentHash) count++;
+            }
+            if (count >= 5) return "draw_fivefold";
+        }
+        return "playing";
+    }
+
     int kingPos = gBoard.findKing(gBoard.turn);
     if (kingPos >= 0 && isAttacked(gBoard, kingPos, -gBoard.turn))
         return gBoard.turn == 1 ? "checkmate_black_wins" : "checkmate_white_wins";
@@ -724,6 +814,22 @@ std::string getGameStatus() {
 bool isInCheck() {
     int kp = gBoard.findKing(gBoard.turn);
     return kp >= 0 && isAttacked(gBoard, kp, -gBoard.turn);
+}
+
+bool canClaimDraw() {
+    if (gameHistory.empty()) return false;
+    uint64_t currentHash = gameHistory.back();
+    int count = 0;
+    for (uint64_t h : gameHistory) {
+        if (h == currentHash) count++;
+    }
+    return count >= 3;
+}
+
+void claimDraw() {
+    if (canClaimDraw()) {
+        drawClaimed = true;
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -738,4 +844,6 @@ EMSCRIPTEN_BINDINGS(chess_engine) {
     emscripten::function("makeEngineMoveAtDepth",   &makeEngineMoveAtDepth);
     emscripten::function("getGameStatus",           &getGameStatus);
     emscripten::function("isInCheck",               &isInCheck);
+    emscripten::function("canClaimDraw",            &canClaimDraw);
+    emscripten::function("claimDraw",               &claimDraw);
 }
