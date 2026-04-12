@@ -119,21 +119,23 @@ function render() {
       const piece  = board.squares[i];
       const isLight = (r + c) % 2 === 0;
 
-      // Background colour: light/dark + highlights
-      let bg = isLight ? '#f0d9b5' : '#b58863';    // classic wooden board
+      // Base square classes
+      let classes = ['sq'];
+      classes.push(isLight ? 'sq-light' : 'sq-dark');
+      
       if (selected === i) {
-        bg = '#6dc16d';                             // selected piece: green
+        classes.push('is-selected');
       } else if (i === lastFrom || i === lastTo) {
-        bg = isLight ? '#cdd16e' : '#aaa23a';       // last move: yellow
+        classes.push('is-last-move');
       }
       if (inCheck && piece === kingPiece) {
-        bg = '#e06060';                             // king in check: red
+        classes.push('is-in-check');
       }
 
       const isHint   = hints.includes(i);
       const hasPiece = piece !== 0;
 
-      squaresHTML += `<div class="sq" style="background:${bg}" data-sq="${i}">`;
+      squaresHTML += `<div class="${classes.join(' ')}" data-sq="${i}">`;
       if (piece) {
         const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
         squaresHTML += `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
