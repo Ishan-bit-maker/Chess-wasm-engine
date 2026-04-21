@@ -80,8 +80,26 @@ let selected  = null;     // currently selected square index (or null)
 let hints     = [];       // legal destination squares for selected piece
 let lastFrom  = null;     // source square of most recent move (for highlight)
 let lastTo    = null;     // dest  square of most recent move
+let prevBoard = null;     // previous board state for animation tracking
 let flipped   = false;    // true = view from Black's side
 let thinking  = false;    // true while C++ engine is computing
+
+// ─────────────────────────────────────────────
+// SOUNDS
+// ─────────────────────────────────────────────
+const sounds = {
+  move:    new Audio('https://lichess.org/assets/sound/standard/Move.mp3'),
+  capture: new Audio('https://lichess.org/assets/sound/standard/Capture.mp3'),
+  check:   new Audio('https://lichess.org/assets/sound/standard/Check.mp3'),
+  notify:  new Audio('https://lichess.org/assets/sound/standard/GenericNotify.mp3')
+};
+
+function playSound(type) {
+  if (sounds[type]) {
+    sounds[type].currentTime = 0;
+    sounds[type].play().catch(() => {}); // catch blocks for browsers that block auto-play
+  }
+}
 
 // ─────────────────────────────────────────────
 // BOARD STATE SYNC
@@ -97,71 +115,138 @@ function syncBoard() {
 // Builds the board DOM from scratch on every
 // state change. Simple and reliable.
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// RENDERING (Animated & Optimized)
+// ─────────────────────────────────────────────
+function initBoard() {
+  const boardEl = document.getElementById('board');
+  if (boardEl.children.length === 64) return;
+  
+  boardEl.innerHTML = ''; // clear any placeholders
+  for (let i = 0; i < 64; i++) {
+    const sq = document.createElement('div');
+    sq.className = 'sq';
+    sq.dataset.sq = i;
+    sq.addEventListener('click', () => handleSquareClick(i));
+    boardEl.appendChild(sq);
+  }
+}
+
 function render() {
-  if (!board) return;
+  if (!board || !engine) return;
+  initBoard();
 
   const boardEl = document.getElementById('board');
   const ranksEl = document.getElementById('ranks');
   const filesEl = document.getElementById('files');
 
-  // Determine square ordering based on board orientation
   const rows = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   const cols = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
 
-  const inCheck  = !thinking && engine && engine.isInCheck();
-  const kingPiece = (board.turn === 1) ? 6 : 12; // wK or bK
+  const inCheck   = !thinking && engine.isInCheck();
+  const kingPiece = (board.turn === 1) ? 6 : 12;
 
-  // ── Squares ────────────────────────────────
-  let squaresHTML = '';
-  rows.forEach(r => {
-    cols.forEach(c => {
-      const i      = r * 8 + c;
-      const piece  = board.squares[i];
+  // Track if we should animate a move
+  let animatedPiece = null;
+  let moveFromRect = null;
+
+  // 1. Update Board Squares
+  rows.forEach((r, rowIdx) => {
+    cols.forEach((c, colIdx) => {
+      const i = r * 8 + c;
+      const sqEl = boardEl.children[rowIdx * 8 + colIdx];
+      sqEl.dataset.sq = i;
+      
+      const piece = board.squares[i];
       const isLight = (r + c) % 2 === 0;
 
-      // Base square classes
-      let classes = ['sq'];
-      classes.push(isLight ? 'sq-light' : 'sq-dark');
+      // Update Classes
+      sqEl.className = `sq ${isLight ? 'sq-light' : 'sq-dark'}`;
+      if (selected === i) sqEl.classList.add('is-selected');
+      if (i === lastFrom || i === lastTo) sqEl.classList.add('is-last-move');
+      if (inCheck && piece === kingPiece) sqEl.classList.add('is-in-check');
+
+      // Update Piece Element
+      let pieceEl = sqEl.querySelector('.piece:not(.ghost)');
+      const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
       
-      if (selected === i) {
-        classes.push('is-selected');
-      } else if (i === lastFrom || i === lastTo) {
-        classes.push('is-last-move');
-      }
-      if (inCheck && piece === kingPiece) {
-        classes.push('is-in-check');
+      // Remove any existing ghost
+      const oldGhost = sqEl.querySelector('.piece.ghost');
+      if (oldGhost) oldGhost.remove();
+
+      if (piece === 0) {
+        if (pieceEl) pieceEl.remove();
+        
+        // Add ghost piece at starting square of last move
+        if (i === lastFrom && prevBoard && prevBoard.squares[i] !== 0) {
+          const ghost = document.createElement('span');
+          const ghostPiece = prevBoard.squares[i];
+          const ghostSide = ghostPiece <= 6 ? 'white-piece' : 'black-piece';
+          ghost.className = `piece ghost ${ghostSide}`;
+          ghost.textContent = GLYPHS[ghostPiece];
+          sqEl.appendChild(ghost);
+        }
+      } else {
+        const isNewPiece = !pieceEl;
+        const isUserTurn = board.turn === 1 && !thinking;
+        const isPlayable = isUserTurn && piece >= 1 && piece <= 6;
+        
+        if (isNewPiece) {
+          pieceEl = document.createElement('span');
+          pieceEl.className = `piece ${sideClass} ${isPlayable ? 'is-playable' : ''}`;
+          sqEl.appendChild(pieceEl);
+        } else {
+          pieceEl.className = `piece ${sideClass} ${isPlayable ? 'is-playable' : ''}`;
+        }
+        pieceEl.textContent = GLYPHS[piece];
+
+        // ANIMATION LOGIC: If this piece just moved here
+        if (i === lastTo && lastFrom !== null && prevBoard && prevBoard.squares[lastFrom] === piece) {
+          animatedPiece = pieceEl;
+          const fromRowIdx = rows.indexOf(Math.floor(lastFrom / 8));
+          const fromColIdx = cols.indexOf(lastFrom % 8);
+          const fromSqEl = boardEl.children[fromRowIdx * 8 + fromColIdx];
+          moveFromRect = fromSqEl.getBoundingClientRect();
+        }
       }
 
-      const isHint   = hints.includes(i);
-      const hasPiece = piece !== 0;
-
-      squaresHTML += `<div class="${classes.join(' ')}" data-sq="${i}">`;
-      if (piece) {
-        const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
-        squaresHTML += `<span class="${sideClass}">${GLYPHS[piece]}</span>`;
+      // Update Hints
+      const isHint = hints.includes(i);
+      let hintEl = sqEl.querySelector('.hint-dot, .hint-cap');
+      if (isHint) {
+        const hintType = piece !== 0 ? 'hint-cap' : 'hint-dot';
+        if (!hintEl || !hintEl.classList.contains(hintType)) {
+          if (hintEl) hintEl.remove();
+          hintEl = document.createElement('div');
+          hintEl.className = hintType;
+          sqEl.appendChild(hintEl);
+        }
+      } else if (hintEl) {
+        hintEl.remove();
       }
-      if (isHint)  squaresHTML += hasPiece
-        ? `<div class="hint-cap"></div>`
-        : `<div class="hint-dot"></div>`;
-      squaresHTML += `</div>`;
     });
   });
-  boardEl.innerHTML = squaresHTML;
 
-  // ── Rank labels ─────────────────────────────
+  // Execute Piece Slide Animation (FLIP)
+  if (animatedPiece && moveFromRect) {
+    const toRect = animatedPiece.getBoundingClientRect();
+    const dx = moveFromRect.left - toRect.left;
+    const dy = moveFromRect.top - toRect.top;
+
+    animatedPiece.style.transition = 'none';
+    animatedPiece.style.transform = `translate(${dx}px, ${dy}px)`;
+    
+    requestAnimationFrame(() => {
+      animatedPiece.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+      animatedPiece.style.transform = 'translate(0, 0)';
+    });
+  }
+
+  // 2. Labels
   ranksEl.innerHTML = rows.map(r => `<span>${r + 1}</span>`).join('');
+  filesEl.innerHTML = cols.map(c => `<span>${String.fromCharCode(97 + c)}</span>`).join('');
 
-  // ── File labels ─────────────────────────────
-  filesEl.innerHTML = cols.map(c =>
-    `<span>${String.fromCharCode(97 + c)}</span>`
-  ).join('');
-
-  // ── Re-attach click listeners ────────────────
-  boardEl.querySelectorAll('.sq').forEach(el =>
-    el.addEventListener('click', () => handleSquareClick(+el.dataset.sq))
-  );
-
-  // ── Status text ─────────────────────────────
+  prevBoard = JSON.parse(JSON.stringify(board)); // deep copy for next render
   updateStatus(inCheck);
 }
 
@@ -195,6 +280,9 @@ function handleSquareClick(i) {
       .filter(uci => uciDest(uci) === i);
 
     if (movingMoves.length > 0) {
+      // Check for capture
+      const isCapture = board.squares[i] !== 0;
+      
       // Default to queen promotion if multiple promotion choices exist
       const uci = movingMoves.find(u => u.length === 5 && u[4] === 'q')
                || movingMoves[0];
@@ -205,6 +293,12 @@ function handleSquareClick(i) {
       lastTo   = i;
       selected = null;
       hints    = [];
+      
+      // Sound feedback
+      if (engine.isInCheck()) playSound('check');
+      else if (isCapture) playSound('capture');
+      else playSound('move');
+
       render();
 
       // Trigger engine response after a brief repaint delay
@@ -245,11 +339,21 @@ function scheduleEngineMove() {
       // Parse from/to from the UCI string for highlighting
       const algFrom = uci.slice(0, 2);
       const algTo   = uci.slice(2, 4);
-      lastFrom = (algFrom.charCodeAt(0) - 97) + (7 - (parseInt(algFrom[1]) - 1)) * 8;
-      lastTo   = (algTo.charCodeAt(0)   - 97) + (7 - (parseInt(algTo[1])   - 1)) * 8;
+      const fromI = (algFrom.charCodeAt(0) - 97) + (7 - (parseInt(algFrom[1]) - 1)) * 8;
+      const toI   = (algTo.charCodeAt(0)   - 97) + (7 - (parseInt(algTo[1])   - 1)) * 8;
+      
+      const isCapture = board.squares[toI] !== 0;
+
+      lastFrom = fromI;
+      lastTo   = toI;
+
+      syncBoard();
+      
+      if (engine.isInCheck()) playSound('check');
+      else if (isCapture) playSound('capture');
+      else playSound('move');
     }
 
-    syncBoard();
     thinking = false;
     render();
   }, 30); // short delay lets the browser repaint before the synchronous search
