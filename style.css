@@ -12,9 +12,9 @@
 /* ── Base ────────────────────────────────── */
 body {
   font-family: 'Outfit', -apple-system, sans-serif;
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('bob2.jpg');
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('boby.jpg');
   background-size: cover;
-  background-position: center 20%;
+  background-position: center 15%;
   background-attachment: fixed;
   color: #f8fafc;
   min-height: 100vh;
@@ -34,7 +34,7 @@ body {
   gap: 48px;
   width: 100%;
   max-width: 1100px;
-  transform: translateX(-40px);
+  transform: translateX(160px);
 }
 
 /* ── Left: Board Area ────────────────────── */
