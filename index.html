@@ -25,10 +25,11 @@
     <div class="board-area">
       
       <!-- Opponent Banner -->
-      <div class="player-banner top-banner">
+      <div class="player-banner">
+        <div class="player-icon">🤖</div>
         <div class="player-info">
           <span class="player-name">Engine</span>
-          <span class="player-side">(Plays Black)</span>
+          <span class="player-side">(Black)</span>
         </div>
       </div>
 
@@ -38,29 +39,30 @@
           <!-- Rank labels (left side) -->
           <div id="ranks"></div>
 
+          <!-- File labels (bottom) -->
+          <div id="files"></div>
+
           <!-- The actual chess board squares -->
           <div id="board"></div>
         </div>
-        <!-- File labels (bottom) -->
-        <div id="files"></div>
       </div>
 
       <!-- Player Banner -->
-      <div class="player-banner bottom-banner">
-        <div class="player-icon user-icon" title="Player">👤</div>
+      <div class="player-banner">
+        <div class="player-icon">👤</div>
         <div class="player-info">
           <span class="player-name">Guest</span>
-          <span class="player-side">(You play White)</span>
+          <span class="player-side">(White)</span>
         </div>
       </div>
     </div>
 
     <!-- RIGHT: Sidebar Control Panel -->
-    <div class="sidebar"></div>
+    <div class="sidebar">
       
       <header>
         <h1>Chess Engine</h1>
-        <p id="info">Engine vs You</p>
+        <p id="info">Stockfish WASM</p>
       </header>
 
       <div class="sidebar-content">
