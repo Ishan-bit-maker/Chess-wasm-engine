@@ -12,7 +12,10 @@
 /* ── Base ────────────────────────────────── */
 body {
   font-family: 'Outfit', -apple-system, sans-serif;
-  background: #7d1c1c; /* Deep Burgundy background from image */
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('bob.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: #f8fafc;
   min-height: 100vh;
   display: flex;
