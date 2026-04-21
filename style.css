@@ -12,7 +12,7 @@
 /* ── Base ────────────────────────────────── */
 body {
   font-family: 'Outfit', -apple-system, sans-serif;
-  background: radial-gradient(circle at top right, #1e293b, #0f172a); /* Deep Midnight Gradient */
+  background: #0a0c10; /* Dark minimalist background */
   color: #f8fafc;
   min-height: 100vh;
   display: flex;
@@ -148,28 +148,30 @@ body {
   line-height: 1;
 }
 
-/* Modern Midnight Theme */
-.sq-light { background: #eedd82; } /* Muted Blue/Wood */
-.sq-dark { background: #262421; }  /* Deep Charcoal */
+/* Modern Digital High-Contrast Theme */
+.sq-light { background: #b1b5bd; } /* Matte Slate Grey */
+.sq-dark { background: #2e3b4e; }  /* Deep Midnight Navy Blue */
 
 .sq.is-selected {
-  background-color: rgba(255, 255, 204, 0.5) !important; /* Soft Yellow */
-  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.3);
+  background-color: rgba(0, 255, 255, 0.2) !important; /* Cyan Tint */
+  box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.3);
 }
 
 .sq.is-last-move {
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 51, 0.4); /* Subtle Border */
-  background-color: rgba(255, 255, 51, 0.15); /* Very light glow */
+  box-shadow: 0 0 12px #00ffff, inset 0 0 12px #00ffff; /* Neon Cyan Outline */
+  border: 1px solid #00ffff;
+  z-index: 5;
 }
 
 .sq.is-in-check {
-  animation: pulse-red 1.5s infinite;
+  animation: pulse-red-neon 1.5s infinite;
+  box-shadow: 0 0 15px #ff0000, inset 0 0 15px #ff0000;
 }
 
-@keyframes pulse-red {
-  0% { background-color: #ef4444; }
-  50% { background-color: #991b1b; }
-  100% { background-color: #ef4444; }
+@keyframes pulse-red-neon {
+  0% { background-color: rgba(255, 0, 0, 0.4); }
+  50% { background-color: rgba(128, 0, 0, 0.4); }
+  100% { background-color: rgba(255, 0, 0, 0.4); }
 }
 
 .piece {
@@ -186,13 +188,13 @@ body {
 
 .white-piece {
   color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); /* Crisp bright pieces with shadow */
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .black-piece {
-  color: #1a1a1a;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.1);
+  color: #05070a; /* High contrast black */
+  filter: drop-shadow(0 2px 4px rgba(255,255,255,0.1));
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
