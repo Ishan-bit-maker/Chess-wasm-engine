@@ -1,4 +1,4 @@
-# Chess Engine — C++ / WebAssembly
+# Chess Engine — C++ / WebAssembly try to beat my engine
 
 A fully playable chess engine written in C++, compiled to WebAssembly
 via [Emscripten](https://emscripten.org) and rendered in the browser with
@@ -43,13 +43,14 @@ HTML/CSS board rendered in the browser
 
 The chess logic (move generation, minimax, evaluation) runs entirely in
 the compiled C++ via WebAssembly. JavaScript only handles:
+
 - Rendering the board (HTML/CSS)
 - Translating click events into UCI move strings
 - Calling the C++ API and updating the display
 
 ---
 
-## Setup & Build
+## Setup & Build of diffpal
 
 ### Step 1 — Install Emscripten
 
@@ -63,6 +64,7 @@ source ./emsdk_env.sh     # Linux/macOS
 ```
 
 Verify:
+
 ```bash
 em++ --version
 ```
@@ -76,6 +78,7 @@ chmod +x build.sh
 ```
 
 This runs:
+
 ```bash
 em++ chess.cpp -O3 -o chess.js \
   --bind \
@@ -86,14 +89,14 @@ em++ chess.cpp -O3 -o chess.js \
   -s ENVIRONMENT="web"
 ```
 
-| Flag | Purpose |
-|---|---|
-| `-O3` | Full compiler optimisations (inlining, vectorisation) |
-| `--bind` | Enable Emscripten Embind for C++ ↔ JS function bindings |
-| `MODULARIZE=1` | Wrap the module in a factory function `ChessEngine()` |
-| `EXPORT_NAME` | Name of the factory function |
-| `ALLOW_MEMORY_GROWTH=1` | Heap can grow if needed |
-| `ENVIRONMENT=web` | Strip unnecessary Node.js/worker code from the output |
+| Flag                    | Purpose                                                 |
+| ----------------------- | ------------------------------------------------------- |
+| `-O3`                   | Full compiler optimisations (inlining, vectorisation)   |
+| `--bind`                | Enable Emscripten Embind for C++ ↔ JS function bindings |
+| `MODULARIZE=1`          | Wrap the module in a factory function `ChessEngine()`   |
+| `EXPORT_NAME`           | Name of the factory function                            |
+| `ALLOW_MEMORY_GROWTH=1` | Heap can grow if needed                                 |
+| `ENVIRONMENT=web`       | Strip unnecessary Node.js/worker code from the output   |
 
 ### Step 3 — Serve and Play
 
@@ -114,6 +117,7 @@ Open: **http://localhost:8080**
 ## Engine Details
 
 ### Board representation
+
 Flat `int[64]` mailbox array. Piece encoding:
 
 ```
@@ -123,35 +127,38 @@ Flat `int[64]` mailbox array. Piece encoding:
 ```
 
 ### Move generation
+
 - Pseudo-legal moves generated per piece type
 - Legality filter: simulate each move, reject if own king is left in check
 - Full support: castling, en passant, all four promotions
 
 ### Search
+
 - **Minimax with alpha-beta pruning**
 - **MVV-LVA move ordering** (captures sorted by victim value minus attacker value)
 - Depth selectable via UI (3–6 plies)
 
 ### Evaluation
+
 - **Material** (centipawns): P=100 N=320 B=330 R=500 Q=900
 - **Piece-square tables** for all 6 piece types (positional bonuses)
 
 ### Estimated strength by depth
 
 | Depth | Search time | Approx ELO |
-|---|---|---|
-| 3 | < 50 ms  | ~1200 |
-| 4 | ~200 ms  | ~1500 |
-| 5 | ~1 s     | ~1700 |
-| 6 | ~5–10 s  | ~1900 |
+| ----- | ----------- | ---------- |
+| 3     | < 50 ms     | ~1200      |
+| 4     | ~200 ms     | ~1500      |
+| 5     | ~1 s        | ~1700      |
+| 6     | ~5–10 s     | ~1900      |
 
 ### Why C++/WASM vs pure JavaScript?
 
-| | JavaScript | C++/WASM |
-|---|---|---|
-| Typical depth in 1s | 3 ply | 5–6 ply |
-| Nodes/sec | ~500k | ~5–10M |
-| ELO at same depth | baseline | +300–400 |
+|                     | JavaScript | C++/WASM |
+| ------------------- | ---------- | -------- |
+| Typical depth in 1s | 3 ply      | 5–6 ply  |
+| Nodes/sec           | ~500k      | ~5–10M   |
+| ELO at same depth   | baseline   | +300–400 |
 
 C++ benefits: no JIT warm-up, no garbage collector pauses, cheaper
 function calls, and the ability to use bitboards & SIMD in future.
@@ -174,12 +181,17 @@ Some ideas for improving strength further:
 
 These functions are exported from `chess.cpp` via `EMSCRIPTEN_BINDINGS`:
 
-| Function | Returns | Description |
-|---|---|---|
-| `initGame()` | void | Reset to starting position |
-| `getBoardJSON()` | string | Full board state as JSON |
-| `getLegalMovesFromSquare(sq)` | string | JSON array of UCI strings |
-| `makePlayerMove(uci)` | bool | Apply move; true if legal |
-| `makeEngineMoveAtDepth(depth)` | string | Engine plays best move, returns UCI |
-| `getGameStatus()` | string | "playing" / "checkmate_*" / "stalemate" |
-| `isInCheck()` | bool | Is the side to move in check? |
+| Function                       | Returns | Description                               |
+| ------------------------------ | ------- | ----------------------------------------- |
+| `initGame()`                   | void    | Reset to starting position                |
+| `getBoardJSON()`               | string  | Full board state as JSON                  |
+| `getLegalMovesFromSquare(sq)`  | string  | JSON array of UCI strings                 |
+| `makePlayerMove(uci)`          | bool    | Apply move; true if legal                 |
+| `makeEngineMoveAtDepth(depth)` | string  | Engine plays best move, returns UCI       |
+| `getGameStatus()`              | string  | "playing" / "checkmate\_\*" / "stalemate" |
+| `isInCheck()`                  | bool    | Is the side to move in check?             |
+
+## Upcoming Features
+
+- Improved move evaluation
+- Alpha-beta optimization
