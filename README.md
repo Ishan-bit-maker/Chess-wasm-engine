@@ -195,3 +195,4 @@ These functions are exported from `chess.cpp` via `EMSCRIPTEN_BINDINGS`:
 
 - Improved move evaluation
 - Alpha-beta optimization
+- some crazy stuff
