@@ -196,3 +196,4 @@ These functions are exported from `chess.cpp` via `EMSCRIPTEN_BINDINGS`:
 - Improved move evaluation
 - Alpha-beta optimization
 - some crazy stuffs
+- just adding extra stuff to check the webhook for the diffpal
