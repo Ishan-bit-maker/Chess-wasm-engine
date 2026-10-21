@@ -25,9 +25,35 @@
 'use strict';
 
 // ─────────────────────────────────────────────
-// PIECE RENDERING
+// PIECE RENDERING — SVG images
 // Index matches the piece encoding in chess.cpp.
 // ─────────────────────────────────────────────
+const PIECE_FILES = [
+  null,      // 0  empty
+  'wP.svg',  // 1  wP
+  'wN.svg',  // 2  wN
+  'wB.svg',  // 3  wB
+  'wR.svg',  // 4  wR
+  'wQ.svg',  // 5  wQ
+  'wK.svg',  // 6  wK
+  'bP.svg',  // 7  bP
+  'bN.svg',  // 8  bN
+  'bB.svg',  // 9  bB
+  'bR.svg',  // 10 bR
+  'bQ.svg',  // 11 bQ
+  'bK.svg',  // 12 bK
+];
+
+// Preload piece images so they appear instantly
+const pieceImageCache = {};
+PIECE_FILES.forEach(f => {
+  if (!f) return;
+  const img = new Image();
+  img.src = `assets/pieces/${f}`;
+  pieceImageCache[f] = img;
+});
+
+// Legacy glyph fallback (kept for ghost pieces)
 const GLYPHS = [
   '',    // 0  empty
   '♟',  // 1  wP (solid)
@@ -111,12 +137,7 @@ function syncBoard() {
 }
 
 // ─────────────────────────────────────────────
-// RENDERING
-// Builds the board DOM from scratch on every
-// state change. Simple and reliable.
-// ─────────────────────────────────────────────
-// ─────────────────────────────────────────────
-// RENDERING (Animated & Optimized)
+// RENDERING (Animated & Optimized with SVG pieces)
 // ─────────────────────────────────────────────
 function initBoard() {
   const boardEl = document.getElementById('board');
@@ -132,13 +153,29 @@ function initBoard() {
   }
 }
 
+/** Create a piece element with an SVG <img> inside */
+function createPieceElement(pieceCode, isPlayable) {
+  const el = document.createElement('div');
+  const sideClass = pieceCode <= 6 ? 'white-piece' : 'black-piece';
+  el.className = `piece ${sideClass} ${isPlayable ? 'is-playable' : ''}`;
+
+  const file = PIECE_FILES[pieceCode];
+  if (file) {
+    const img = document.createElement('img');
+    img.className = 'piece-img';
+    img.src = `assets/pieces/${file}`;
+    img.alt = '';
+    img.draggable = false;
+    el.appendChild(img);
+  }
+  return el;
+}
+
 function render() {
   if (!board || !engine) return;
   initBoard();
 
   const boardEl = document.getElementById('board');
-  const ranksEl = document.getElementById('ranks');
-  const filesEl = document.getElementById('files');
 
   const rows = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   const cols = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
@@ -166,39 +203,39 @@ function render() {
       if (i === lastFrom || i === lastTo) sqEl.classList.add('is-last-move');
       if (inCheck && piece === kingPiece) sqEl.classList.add('is-in-check');
 
-      // Update Piece Element
-      let pieceEl = sqEl.querySelector('.piece:not(.ghost)');
-      const sideClass = piece <= 6 ? 'white-piece' : 'black-piece';
-      
-      // Remove any existing ghost
-      const oldGhost = sqEl.querySelector('.piece.ghost');
-      if (oldGhost) oldGhost.remove();
+      // Clear all children (except we'll rebuild)
+      sqEl.innerHTML = '';
 
+      // Add coordinate labels on edge squares
+      // Rank label: on file-a squares (col 0)
+      if (c === (flipped ? 7 : 0)) {
+        const rankLabel = document.createElement('span');
+        rankLabel.className = 'coord-rank';
+        rankLabel.textContent = 8 - r;
+        sqEl.appendChild(rankLabel);
+      }
+      // File label: on rank-1 squares (row 7)
+      if (r === (flipped ? 0 : 7)) {
+        const fileLabel = document.createElement('span');
+        fileLabel.className = 'coord-file';
+        fileLabel.textContent = String.fromCharCode(97 + c);
+        sqEl.appendChild(fileLabel);
+      }
+
+      // Update Piece
       if (piece === 0) {
-        if (pieceEl) pieceEl.remove();
-        
         // Add ghost piece at starting square of last move
         if (i === lastFrom && prevBoard && prevBoard.squares[i] !== 0) {
-          const ghost = document.createElement('span');
           const ghostPiece = prevBoard.squares[i];
-          const ghostSide = ghostPiece <= 6 ? 'white-piece' : 'black-piece';
-          ghost.className = `piece ghost ${ghostSide}`;
-          ghost.textContent = GLYPHS[ghostPiece];
-          sqEl.appendChild(ghost);
+          const ghostEl = createPieceElement(ghostPiece, false);
+          ghostEl.classList.add('ghost');
+          sqEl.appendChild(ghostEl);
         }
       } else {
-        const isNewPiece = !pieceEl;
         const isUserTurn = board.turn === 1 && !thinking;
         const isPlayable = isUserTurn && piece >= 1 && piece <= 6;
-        
-        if (isNewPiece) {
-          pieceEl = document.createElement('span');
-          pieceEl.className = `piece ${sideClass} ${isPlayable ? 'is-playable' : ''}`;
-          sqEl.appendChild(pieceEl);
-        } else {
-          pieceEl.className = `piece ${sideClass} ${isPlayable ? 'is-playable' : ''}`;
-        }
-        pieceEl.textContent = GLYPHS[piece];
+        const pieceEl = createPieceElement(piece, isPlayable);
+        sqEl.appendChild(pieceEl);
 
         // ANIMATION LOGIC: If this piece just moved here
         if (i === lastTo && lastFrom !== null && prevBoard && prevBoard.squares[lastFrom] === piece) {
@@ -212,17 +249,11 @@ function render() {
 
       // Update Hints
       const isHint = hints.includes(i);
-      let hintEl = sqEl.querySelector('.hint-dot, .hint-cap');
       if (isHint) {
         const hintType = piece !== 0 ? 'hint-cap' : 'hint-dot';
-        if (!hintEl || !hintEl.classList.contains(hintType)) {
-          if (hintEl) hintEl.remove();
-          hintEl = document.createElement('div');
-          hintEl.className = hintType;
-          sqEl.appendChild(hintEl);
-        }
-      } else if (hintEl) {
-        hintEl.remove();
+        const hintEl = document.createElement('div');
+        hintEl.className = hintType;
+        sqEl.appendChild(hintEl);
       }
     });
   });
@@ -241,10 +272,6 @@ function render() {
       animatedPiece.style.transform = 'translate(0, 0)';
     });
   }
-
-  // 2. Labels
-  ranksEl.innerHTML = rows.map(r => `<span>${r + 1}</span>`).join('');
-  filesEl.innerHTML = cols.map(c => `<span>${String.fromCharCode(97 + c)}</span>`).join('');
 
   prevBoard = JSON.parse(JSON.stringify(board)); // deep copy for next render
   updateStatus(inCheck);

@@ -35,18 +35,21 @@
         </div>
       </div>
 
-      <!-- Board + coordinates wrapper -->
+      <!-- 3D Board + wooden frame wrapper -->
       <div class="board-wrapper">
-        <div id="board-outer">
-          <!-- Rank labels (left side) -->
-          <div id="ranks"></div>
+        <div class="board-frame">
+          <div id="board-outer">
+            <!-- Rank labels (hidden in 3D mode, coords are on squares) -->
+            <div id="ranks"></div>
 
-          <!-- The actual chess board squares -->
-          <div id="board"></div>
+            <!-- The actual chess board squares -->
+            <div id="board"></div>
+          </div>
         </div>
-        <!-- File labels (bottom) -->
-        <div id="files"></div>
       </div>
+
+      <!-- File labels (hidden in 3D mode) -->
+      <div id="files"></div>
 
       <!-- Player Banner -->
       <div class="player-banner bottom-banner">
