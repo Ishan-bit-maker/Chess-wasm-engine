@@ -193,50 +193,8 @@ body {
   line-height: 1;
 }
 
-/* Cleaned up duplicate background block and stray rules */
-/* Removed erroneous stray background rule and duplicated body styles */
-
-/* Body background – use a subtle dark color instead of the full‑screen image */
-body {
-  background: #0d0d0d; /* dark background */
-  color: #f8fafc;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 16px;
-  overflow-x: hidden;
-}
-
-/* Board wrapper – use the uploaded image as a board frame/background */
-.board-wrapper {
-  background-image: url('assets/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  padding: 12px; /* optional inner padding */
-  border-radius: 8px;
-}
-
-/* Updated board square textures – ensure only image backgrounds */
-.sq-light {
-  background: url('assets/light_wood.png') no-repeat center/cover;
-}
-.sq-dark {
-  background: url('assets/dark_wood.png') no-repeat center/cover;
-}
-
-/* Remove the old color fallback for .sq-dark */
-
-
-/* Updated board square textures with correct asset paths */
-.sq-light {
-  background: url('assets/light_wood.png') no-repeat center/cover;
-}
-.sq-dark {
-  background: url('assets/dark_wood.png') no-repeat center/cover;
-}
-
+/* Traditional Wooden Theme */
+.sq-light { background: #f0d9b5; } /* Cream */
 .sq-dark { background: #b58863; }  /* Wood Brown */
 
 .sq.is-selected {
