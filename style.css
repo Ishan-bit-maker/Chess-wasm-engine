@@ -10,7 +10,41 @@
 }
 
 /* ── Base ────────────────────────────────── */
+/* ── Base ────────────────────────────────── */
 body {
+  background-image: url('assets/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: #f8fafc;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 16px;
+  overflow-x: hidden;
+}
+
+.sq-light {
+  background: url('light_wood.png') no-repeat center/cover;
+}
+.sq-dark {
+  background: url('dark_wood.png') no-repeat center/cover;
+}
+  /* Cleaned up duplicate background block */
+/* Removed duplicated base styles (lines 34-44) */
+
+  background: url('assets/bg.jpg') center center / cover no-repeat fixed;
+  font-family: 'Outfit', -apple-system, sans-serif;
+  color: #f8fafc;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 16px;
+  overflow-x: hidden;
+}
+
   font-family: 'Outfit', -apple-system, sans-serif;
   background: linear-gradient(135deg, #334155, #0f172a);
   background-attachment: fixed;

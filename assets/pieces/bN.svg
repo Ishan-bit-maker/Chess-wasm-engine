@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" width="100%" height="100%">
+
+  <defs>
+    <!-- Black / Dark Walnut / Ebony gradients -->
+    <radialGradient id="b-wood-rad" cx="35%" cy="25%" r="80%">
+      <stop offset="0%" stop-color="#735d4d"/>
+      <stop offset="25%" stop-color="#4f3e33"/>
+      <stop offset="65%" stop-color="#31251e"/>
+      <stop offset="90%" stop-color="#1d1511"/>
+      <stop offset="100%" stop-color="#0d0907"/>
+    </radialGradient>
+    <linearGradient id="b-wood-vert" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#917763" stop-opacity="0.85"/>
+      <stop offset="20%" stop-color="#634f40" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="#241a14" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#050302" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="b-sheen" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ab907a" stop-opacity="0.9"/>
+      <stop offset="45%" stop-color="#4a392e" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.8"/>
+    </linearGradient>
+    <!-- Drop shadow for 3D grounding -->
+    <filter id="p-shadow" x="-30%" y="-15%" width="160%" height="150%">
+      <feDropShadow dx="0" dy="3.5" stdDeviation="2.2" flood-color="#0a0705" flood-opacity="0.6"/>
+      <feDropShadow dx="0" dy="1.2" stdDeviation="1" flood-color="#1c120c" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#p-shadow)">
+    
+    <path d="M 22 10 C 32.5 11 38.5 18 38 39.5 H 15 C 15 30.5 25 33 23 18 C 24.38 20.91 18.45 25.37 16 27 C 13 29 13.18 31.34 11 31 C 9.95 30.84 4.84 21 10 13 C 13 8.5 18 3 22 5 C 23.92 5.96 24 8.5 24 10 z" fill="url(#b-wood-rad)" stroke="#18100b" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 22 10 C 32.5 11 38.5 18 38 39.5 H 15 C 15 30.5 25 33 23 18 C 24.38 20.91 18.45 25.37 16 27 C 13 29 13.18 31.34 11 31 C 9.95 30.84 4.84 21 10 13 C 13 8.5 18 3 22 5 C 23.92 5.96 24 8.5 24 10 z" fill="url(#b-wood-vert)" opacity="0.45"/>
+    <!-- Mane and head curves -->
+    <path d="M 22 5 C 26 8 27 13 25 18" fill="none" stroke="#806856" stroke-width="0.9" opacity="0.7"/>
+    <path d="M 28 13 C 33 17 34 25 33 33" fill="none" stroke="#806856" stroke-width="0.9" opacity="0.6"/>
+    <!-- Eye -->
+    <circle cx="15.5" cy="15.5" r="1.3" fill="none" stroke="#806856" stroke-width="0.8"/>
+    <circle cx="15.5" cy="15.5" r="0.6" fill="#18100b"/>
+    <!-- Nostril -->
+    <path d="M 9.5 24.5 a 0.7 0.7 0 1 1 -0.1 0" fill="#18100b"/>
+    <!-- Snout and cheek bevel -->
+    <path d="M 12 21 C 14 20 17 21 18 23" fill="none" stroke="#806856" stroke-width="0.8" opacity="0.6"/>
+    <path d="M 15 39.5 h 23" stroke="#806856" stroke-width="0.9" opacity="0.6"/>
+    
+  </g>
+</svg>
