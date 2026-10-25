@@ -25,44 +25,18 @@
 'use strict';
 
 // ─────────────────────────────────────────────
-// PIECE RENDERING — SVG images
+// PIECE RENDERING — Unicode chess symbols
 // Index matches the piece encoding in chess.cpp.
 // ─────────────────────────────────────────────
-const PIECE_FILES = [
-  null,      // 0  empty
-  'wP.svg',  // 1  wP
-  'wN.svg',  // 2  wN
-  'wB.svg',  // 3  wB
-  'wR.svg',  // 4  wR
-  'wQ.svg',  // 5  wQ
-  'wK.svg',  // 6  wK
-  'bP.svg',  // 7  bP
-  'bN.svg',  // 8  bN
-  'bB.svg',  // 9  bB
-  'bR.svg',  // 10 bR
-  'bQ.svg',  // 11 bQ
-  'bK.svg',  // 12 bK
-];
-
-// Preload piece images so they appear instantly
-const pieceImageCache = {};
-PIECE_FILES.forEach(f => {
-  if (!f) return;
-  const img = new Image();
-  img.src = `assets/pieces/${f}`;
-  pieceImageCache[f] = img;
-});
-
-// Legacy glyph fallback (kept for ghost pieces)
 const GLYPHS = [
   '',    // 0  empty
-  '♟',  // 1  wP (solid)
+  '♟',  // 1  wP
   '♞',  // 2  wN
   '♝',  // 3  wB
   '♜',  // 4  wR
   '♛',  // 5  wQ
   '♚',  // 6  wK
-  '♟',  // 7  bP (solid)
+  '♟',  // 7  bP
   '♞',  // 8  bN
   '♝',  // 9  bB
   '♜',  // 10 bR
@@ -137,7 +111,7 @@ function syncBoard() {
 }
 
 // ─────────────────────────────────────────────
-// RENDERING (Animated & Optimized with SVG pieces)
+// RENDERING (Animated & Optimized with chess symbols)
 // ─────────────────────────────────────────────
 function initBoard() {
   const boardEl = document.getElementById('board');
@@ -153,21 +127,16 @@ function initBoard() {
   }
 }
 
-/** Create a piece element with an SVG <img> inside */
+/** Create a piece element with its chess symbol */
 function createPieceElement(pieceCode, isPlayable) {
   const el = document.createElement('div');
   const sideClass = pieceCode <= 6 ? 'white-piece' : 'black-piece';
   el.className = `piece ${sideClass} ${isPlayable ? 'is-playable' : ''}`;
-
-  const file = PIECE_FILES[pieceCode];
-  if (file) {
-    const img = document.createElement('img');
-    img.className = 'piece-img';
-    img.src = `assets/pieces/${file}`;
-    img.alt = '';
-    img.draggable = false;
-    el.appendChild(img);
-  }
+  const symbol = document.createElement('span');
+  symbol.className = 'piece-symbol';
+  symbol.textContent = GLYPHS[pieceCode];
+  symbol.setAttribute('aria-hidden', 'true');
+  el.appendChild(symbol);
   return el;
 }
 
